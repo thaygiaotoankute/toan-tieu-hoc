@@ -311,7 +311,7 @@
                 const markdown = `# ${selectedTopic}\n\n${generatedQuestions}`;
                 
                 // Gọi API Pandoc để chuyển đổi
-                const response = await fetch('https://pandoc-api.onrender.com/convert', {
+                const response = await fetch('https://pandoc-server-2025.fly.dev/convert', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
