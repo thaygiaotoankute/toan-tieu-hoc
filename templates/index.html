@@ -307,15 +307,11 @@
             document.getElementById('export-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
             
             try {
-                // Tạo nội dung markdown với thông tin tác giả
-                const markdown = `# ${selectedTopic}\n\n`
-                    + `**Học sinh:** Nguyễn Minh Khôi - Lớp 2/1\n`
-                    + `**GVHD:** Mai Thị Huyên\n`
-                    + `**Trường:** Tiểu học Nguyễn Du\n\n`
-                    + `${generatedQuestions}`;
+                // Tạo nội dung markdown - chỉ bao gồm tiêu đề và câu hỏi, không có thông tin tác giả
+                const markdown = `# ${selectedTopic}\n\n${generatedQuestions}`;
                 
                 // Gọi API Pandoc để chuyển đổi
-                const response = await fetch('https://pandoc-server-2025.fly.dev/convert', {
+                const response = await fetch('https://pandoc-api.onrender.com/convert', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
