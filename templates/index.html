@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ứng dụng Toán Tiểu học</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .topic-item {
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 4px;
+        }
+        .topic-item:hover {
+            background-color: #f0f0f0;
+        }
+        .topic-item.active {
+            background-color: #e3f2fd;
+            font-weight: bold;
+        }
+        .subtopics {
+            margin-left: 20px;
+            display: none;
+        }
+        .topic-parent.expanded .subtopics {
+            display: block;
+        }
+        .caret-icon {
+            width: 20px;
+            display: inline-block;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading-spinner {
+            width: 3rem;
+            height: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-4">
+        <h1 class="text-center mb-4">Ứng dụng Toán Tiểu học</h1>
+        
+        <div class="row">
+            <!-- Danh sách dạng toán -->
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Danh sách dạng Toán</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="topic-list">
+                            {% for grade_key, grade in math_topics.items() %}
+                                <div class="mb-3 topic-parent" data-id="{{ grade_key }}">
+                                    <div class="topic-header">
+                                        <span class="caret-icon">
+                                            <i class="fas fa-caret-right"></i>
+                                        </span>
+                                        <span class="topic-text">{{ grade.name }}</span>
+                                    </div>
+                                    <div class="subtopics">
+                                        {% for topic in grade.topics %}
+                                            <div class="topic-parent" data-id="{{ topic.id }}">
+                                                <div class="topic-item" onclick="selectTopic('{{ topic.name }}')">
+                                                    <span class="topic-text">{{ topic.name }}</span>
+                                                </div>
+                                                {% if topic.subtopics %}
+                                                    <div class="subtopics">
+                                                        {% for subtopic in topic.subtopics %}
+                                                            <div class="topic-item" onclick="selectTopic('{{ subtopic.name }}')">
+                                                                <span class="topic-text">{{ subtopic.name }}</span>
+                                                            </div>
+                                                        {% endfor %}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        <button id="generate-btn" class="btn btn-primary w-100 mt-3" disabled>Tạo câu hỏi</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hiển thị câu hỏi -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Câu hỏi được tạo</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="loading" class="loading">
+                            <div class="spinner-border loading-spinner text-primary" role="status">
+                                <span class="visually-hidden">Đang tải...</span>
+                            </div>
+                            <p class="mt-2">Đang tạo câu hỏi...</p>
+                        </div>
+                        <div id="empty-state" class="text-center py-5 text-muted">
+                            <i class="fas fa-book fa-3x mb-3"></i>
+                            <p>Vui lòng chọn một dạng toán và nhấn "Tạo câu hỏi" để bắt đầu</p>
+                        </div>
+                        <div id="question-display" style="display: none;">
+                            <h3 id="topic-title" class="mb-3"></h3>
+                            <pre id="questions-content"></pre>
+                            <div class="d-flex justify-content-end mt-3">
+                                <form id="export-form" action="/export" method="post" target="_blank">
+                                    <input type="hidden" id="content-input" name="content">
+                                    <input type="hidden" id="title-input" name="title">
+                                    <button type="submit" id="export-btn" class="btn btn-success">
+                                        <i class="fas fa-file-word me-2"></i>Xuất ra Word
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS và Popper.js -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <script>
+        // Biến toàn cục
+        let selectedTopic = null;
+        let generatedQuestions = null;
+        
+        // Xử lý mở/đóng các mục
+        document.addEventListener('DOMContentLoaded', function() {
+            const topicHeaders = document.querySelectorAll('.topic-header');
+            
+            topicHeaders.forEach(header => {
+                header.addEventListener('click', function() {
+                    const parent = this.closest('.topic-parent');
+                    parent.classList.toggle('expanded');
+                    
+                    // Cập nhật icon
+                    const icon = this.querySelector('.fa-caret-right, .fa-caret-down');
+                    if (icon) {
+                        if (parent.classList.contains('expanded')) {
+                            icon.classList.replace('fa-caret-right', 'fa-caret-down');
+                        } else {
+                            icon.classList.replace('fa-caret-down', 'fa-caret-right');
+                        }
+                    }
+                });
+            });
+            
+            // Mở rộng mục đầu tiên
+            const firstGrade = document.querySelector('.topic-parent[data-id="lop1"]');
+            if (firstGrade) {
+                firstGrade.classList.add('expanded');
+                const icon = firstGrade.querySelector('.fa-caret-right');
+                if (icon) {
+                    icon.classList.replace('fa-caret-right', 'fa-caret-down');
+                }
+            }
+            
+            // Xử lý nút tạo câu hỏi
+            document.getElementById('generate-btn').addEventListener('click', generateQuestions);
+            
+            // Chuẩn bị form xuất Word
+            document.getElementById('export-form').addEventListener('submit', function(e) {
+                if (!generatedQuestions) {
+                    e.preventDefault();
+                    alert('Vui lòng tạo câu hỏi trước khi xuất');
+                    return false;
+                }
+                
+                document.getElementById('content-input').value = generatedQuestions;
+                document.getElementById('title-input').value = selectedTopic;
+            });
+        });
+        
+        // Hàm chọn dạng toán
+        function selectTopic(topic) {
+            // Xóa lớp active của các mục khác
+            const allTopics = document.querySelectorAll('.topic-item');
+            allTopics.forEach(item => item.classList.remove('active'));
+            
+            // Thêm lớp active cho mục được chọn
+            const clickedTopic = Array.from(allTopics).find(item => 
+                item.querySelector('.topic-text').textContent === topic
+            );
+            if (clickedTopic) {
+                clickedTopic.classList.add('active');
+            }
+            
+            // Cập nhật trạng thái
+            selectedTopic = topic;
+            document.getElementById('generate-btn').disabled = false;
+        }
+        
+        // Hàm tạo câu hỏi
+        function generateQuestions() {
+            if (!selectedTopic) return;
+            
+            // Hiển thị trạng thái tải
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('empty-state').style.display = 'none';
+            document.getElementById('question-display').style.display = 'none';
+            
+            // Gọi API tạo câu hỏi
+            $.ajax({
+                url: '/generate',
+                method: 'POST',
+                data: { topic: selectedTopic },
+                success: function(response) {
+                    // Ẩn trạng thái tải
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // Hiển thị câu hỏi
+                    document.getElementById('question-display').style.display = 'block';
+                    document.getElementById('topic-title').textContent = 'Câu hỏi cho: ' + selectedTopic;
+                    document.getElementById('questions-content').textContent = response.questions;
+                    
+                    // Lưu nội dung câu hỏi
+                    generatedQuestions = response.questions;
+                },
+                error: function(xhr) {
+                    // Ẩn trạng thái tải
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('empty-state').style.display = 'block';
+                    
+                    // Hiển thị lỗi
+                    let errorMsg = 'Đã xảy ra lỗi khi tạo câu hỏi';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        errorMsg = xhr.responseJSON.error;
+                    }
+                    alert(errorMsg);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
