@@ -117,13 +117,9 @@
                             <h3 id="topic-title" class="mb-3"></h3>
                             <pre id="questions-content"></pre>
                             <div class="d-flex justify-content-end mt-3">
-                                <form id="export-form" action="/export" method="post" target="_blank">
-                                    <input type="hidden" id="content-input" name="content">
-                                    <input type="hidden" id="title-input" name="title">
-                                    <button type="submit" id="export-btn" class="btn btn-success">
-                                        <i class="fas fa-file-word me-2"></i>Xuất ra Word
-                                    </button>
-                                </form>
+                                <button id="export-btn" class="btn btn-success">
+                                    <i class="fas fa-file-word me-2"></i>Xuất ra Word
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -176,17 +172,8 @@
             // Xử lý nút tạo câu hỏi
             document.getElementById('generate-btn').addEventListener('click', generateQuestions);
             
-            // Chuẩn bị form xuất Word
-            document.getElementById('export-form').addEventListener('submit', function(e) {
-                if (!generatedQuestions) {
-                    e.preventDefault();
-                    alert('Vui lòng tạo câu hỏi trước khi xuất');
-                    return false;
-                }
-                
-                document.getElementById('content-input').value = generatedQuestions;
-                document.getElementById('title-input').value = selectedTopic;
-            });
+            // Thiết lập nút xuất Word
+            document.getElementById('export-btn').addEventListener('click', exportToWord);
         });
         
         // Hàm chọn dạng toán
@@ -247,6 +234,66 @@
                     alert(errorMsg);
                 }
             });
+        }
+        
+        // Hàm xuất Word sử dụng API Pandoc trên Render
+        async function exportToWord() {
+            if (!generatedQuestions) {
+                alert('Vui lòng tạo câu hỏi trước khi xuất');
+                return;
+            }
+            
+            // Hiển thị trạng thái đang xử lý
+            document.getElementById('export-btn').disabled = true;
+            document.getElementById('export-btn').innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+            
+            try {
+                // Tạo nội dung markdown
+                const markdown = `# ${selectedTopic}\n\n${generatedQuestions}`;
+                
+                // Gọi API Pandoc để chuyển đổi
+                const response = await fetch('https://pandoc-server-2025.fly.dev/convert', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/octet-stream'
+                    },
+                    body: JSON.stringify({ markdown: markdown })
+                });
+                
+                // Kiểm tra response
+                if (!response.ok) {
+                    throw new Error(`Lỗi HTTP! Status: ${response.status}`);
+                }
+                
+                // Xử lý blob từ response
+                const blob = await response.blob();
+                
+                // Tạo URL để tải xuống
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `${selectedTopic.replace(/\s+/g, '_')}.docx`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // Dọn dẹp
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+            } catch (error) {
+                console.error('Lỗi:', error);
+                
+                // Xử lý lỗi CORS
+                if (error.message.includes('CORS')) {
+                    alert('Lỗi CORS: Website hiện tại không được phép gọi API. Vui lòng liên hệ admin.');
+                } else {
+                    alert('Có lỗi xảy ra khi chuyển đổi! Vui lòng thử lại sau.');
+                }
+            } finally {
+                // Khôi phục nút
+                document.getElementById('export-btn').disabled = false;
+                document.getElementById('export-btn').innerHTML = '<i class="fas fa-file-word me-2"></i>Xuất ra Word';
+            }
         }
     </script>
 </body>
