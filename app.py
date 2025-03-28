@@ -1,12 +1,6 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 import google.generativeai as genai
 import os
-import json
-import requests
-from io import BytesIO
-import markdown
-import tempfile
-import subprocess
 
 app = Flask(__name__)
 
@@ -111,43 +105,6 @@ def generate_questions():
         # Trả về kết quả
         return jsonify({"questions": response.text})
     
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/export', methods=['POST'])
-def export_to_word():
-    content = request.form.get('content')
-    title = request.form.get('title', 'Câu hỏi Toán tiểu học')
-    
-    if not content:
-        return jsonify({"error": "Không có nội dung để xuất"}), 400
-    
-    try:
-        # Tạo file markdown tạm thời
-        with tempfile.NamedTemporaryFile(suffix='.md', delete=False) as md_file:
-            md_file_path = md_file.name
-            md_content = f"# {title}\n\n{content}"
-            md_file.write(md_content.encode('utf-8'))
-        
-        # Tạo file docx đích
-        docx_file_path = tempfile.mktemp(suffix='.docx')
-        
-        # Sử dụng pandoc để chuyển đổi
-        subprocess.run(['pandoc', md_file_path, '-o', docx_file_path], check=True)
-        
-        # Xóa file markdown tạm thời
-        os.unlink(md_file_path)
-        
-        # Trả về file Word
-        return send_file(
-            docx_file_path, 
-            as_attachment=True,
-            download_name=f"{title.replace(' ', '_')}.docx",
-            mimetype='application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-        )
-    
-    except subprocess.CalledProcessError:
-        return jsonify({"error": "Lỗi khi chuyển đổi file. Hãy đảm bảo Pandoc đã được cài đặt."}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
