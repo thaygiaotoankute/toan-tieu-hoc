@@ -93,11 +93,11 @@ def generate_questions():
         
         # Gọi Gemini API
         model = genai.GenerativeModel(
-            model_name='gemini-2.5-pro-exp-03-25',
+            model_name='gemini-2.0-flash',
             generation_config={
                 'temperature': 0.2,
                 'top_p': 0.95,
-                'max_output_tokens': 4096,
+                'max_output_tokens': 8192,
             }
         )
         response = model.generate_content(prompt)
