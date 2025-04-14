@@ -85,10 +85,8 @@ def generate_questions():
         
         Mỗi câu hỏi cần có định dạng sau:
         1. [Câu hỏi]
-        Đáp án: [Đáp án]
-        Hướng dẫn giải: [Cách giải chi tiết]
-        
-        Đảm bảo câu hỏi phù hợp với học sinh tiểu học và cung cấp hướng dẫn giải dễ hiểu.
+       
+        Đảm bảo câu hỏi phù hợp với học sinh tiểu học theo yêu cầu cần đạt của chương trình giáo dục phổ thông 2018, chỉ cung cấp đề bài, [TUYỆT ĐỐI] không cung cấp lời giải, không  giải thích gì thêm.
         """
         
         # Gọi Gemini API
