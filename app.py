@@ -58,7 +58,8 @@ math_topics = {
                     {"id": "2-7-2", "name": "7.2. Phép trừ không nhớ trong phạm vi 1000"},
                     {"id": "2-7-3", "name": "7.3. Đơn vị đo lường - Ki-lô-gam"},
                     {"id": "2-7-4", "name": "7.4. Phép cộng có nhớ trong phạm vi 1000"},
-                    {"id": "2-7-5", "name": "7.5. Phép trừ có nhớ trong phạm vi 1000"}
+                    {"id": "2-7-5", "name": "7.5. Phép trừ có nhớ trong phạm vi 1000"},
+                    {"id": "2-7-6", "name": "7.6. Ki-lô-mét"}
                 ]
             }
         ]
