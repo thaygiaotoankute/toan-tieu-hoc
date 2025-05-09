@@ -83,7 +83,7 @@ def generate_questions():
     try:
         # Tạo prompt cho Gemini
         prompt = f"""
-        Hãy tạo 10 câu hỏi toán tiểu học cho dạng toán sau: {topic}
+        Hãy tạo 8 câu hỏi toán tiểu học cho dạng toán sau: {topic}
         
         Mỗi câu hỏi cần có định dạng sau:
         1. [Câu hỏi]
